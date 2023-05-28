@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model avalia__o {
+  idAvalia__o                         Int     @id @default(autoincrement()) @map("idAvaliação")
+  notaAvaliacao                       String? @db.VarChar(45)
+  comentarioAvaliacao                 String? @db.VarChar(45)
+  Comprador_idComprador               Int
+  Comprador_Usuario_idUsuario         Int
+  Produto_idProduto                   Int
+  Produto_Vendedor_idVendedor         Int
+  Produto_Comprador_idComprador       Int
+  Produto_Comprador_Usuario_idUsuario Int
+
+  @@map("avaliação")
+}
+
+model carrinho {
+  idcarrinho Int     @default(autoincrement())
+  idUsuario  Int
+  idProduto  Int
+  quantidade Int
+  produto    produto @relation(fields: [idProduto], references: [idProduto], onDelete: NoAction, onUpdate: NoAction, map: "idProduto")
+
+  @@id([idcarrinho, idUsuario, idProduto])
+  @@index([idProduto], map: "idProduto_idx")
+}
+
+model comprador {
+  idComprador       Int
+  cpfcnpjComprador  String      @db.VarChar(45)
+  nomeComprador     String      @db.VarChar(45)
+  Usuario_idUsuario Int
+  usuario           usuario     @relation(fields: [Usuario_idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_comprador_1")
+  pagamento         pagamento[]
+
+  @@id([idComprador, Usuario_idUsuario])
+  @@index([Usuario_idUsuario], map: "fk_comprador_1_idx")
+}
+
+model entrega {
+  idEntrega             Int
+  prazoEntrega          String?   @db.VarChar(45)
+  statusEntrega         String    @db.VarChar(45)
+  Pagamento_idPagamento Int
+  pagamento             pagamento @relation(fields: [Pagamento_idPagamento], references: [idPagamento], onDelete: NoAction, onUpdate: NoAction, map: "fk_entrega_1")
+
+  @@id([idEntrega, Pagamento_idPagamento])
+  @@index([Pagamento_idPagamento], map: "fk_entrega_1_idx")
+}
+
+model pagamento {
+  idPagamento                 Int       @id
+  valorPagamento              String    @db.VarChar(45)
+  formaPagamento              String    @db.VarChar(45)
+  statusPagamento             String    @db.VarChar(45)
+  Comprador_idComprador       Int
+  Comprador_Usuario_idUsuario Int
+  entrega                     entrega[]
+  comprador                   comprador @relation(fields: [Comprador_idComprador, Comprador_Usuario_idUsuario], references: [idComprador, Usuario_idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_pagamento_usuario")
+
+  @@index([Comprador_idComprador, Comprador_Usuario_idUsuario], map: "fk_pagamento_usuarioindex")
+}
+
+model produto {
+  idProduto           Int        @unique(map: "idProduto_UNIQUE") @default(autoincrement())
+  compensa_aoProduto  String     @map("compensaçaoProduto") @db.VarChar(45)
+  descProduto         String?    @db.VarChar(200)
+  categoriaProduto    String?    @db.VarChar(45)
+  precoProduto        String     @db.VarChar(45)
+  Vendedor_idVendedor Int
+  quantidadeVendida   Int?
+  createdAt           DateTime   @default(now()) @db.DateTime(0)
+  carrinho            carrinho[]
+  vendedor            vendedor   @relation(fields: [Vendedor_idVendedor], references: [idVendedor], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_vendedor")
+
+  @@id([idProduto, Vendedor_idVendedor])
+  @@index([Vendedor_idVendedor], map: "fk_produto_vendedor_index")
+}
+
+model usuario {
+  idUsuario    Int         @id @default(autoincrement())
+  nomeUsuario  String      @db.VarChar(45)
+  emailUsuario String      @db.VarChar(45)
+  cpfUsuario   String      @unique(map: "cpfUsuario_UNIQUE") @db.VarChar(45)
+  comprador    comprador[]
+  vendedor     vendedor[]
+}
+
+model vendedor {
+  idVendedor          Int       @id
+  razaosocialVendedor String    @db.VarChar(45)
+  Usuario_idUsuario   Int
+  produto             produto[]
+  usuario             usuario   @relation(fields: [Usuario_idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_vendedor_usuario")
+
+  @@index([Usuario_idUsuario], map: "fk_vendedor_usuario_idx")
+}
